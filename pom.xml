@@ -16,7 +16,24 @@
 	<groupId>de.knightsoft-net</groupId>
 	<artifactId>gwt-webworker</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0.4</version>
+	<!--
+	  4.0.0: the library no longer lives under the com.google.gwt package.
+
+	  The project's own classes moved from com.google.gwt.webworker to
+	  org.eostep.gwt.webworker (both the Java packages and the GWT module name).
+	  Every import, every <inherits name="..."/> and the module rename are breaking
+	  for downstream projects, hence the major bump. References to GWT's own
+	  com.google.gwt.core / user / useragent / dom / dev / http packages are untouched.
+
+	  3.0.0: the last JSNI in this library is gone.
+
+	  MessagePort is no longer a JavaScriptObject overlay - it is a JsInterop native type.
+	  That forced the transfer-list parameter of the postMessage family from
+	  com.google.gwt.core.client.JsArray<MessagePort> to elemental2.core.JsArray<Transferable>,
+	  which is a source-incompatible signature change for callers, hence the major bump.
+	  See MIGRATION-GWT-2.13.md, section "JSNI removal".
+	-->
+	<version>4.0.0</version>
 	<name>gwt-webworker</name>
 	<description>
      WebWorker classes from Googles SpeedTracer extracted as own package to integrate in own projects.
@@ -33,40 +50,9 @@
 
 	<scm>
 		<url>https://github.com/ManfredTremmel/gwt-webworker.git</url>
-		<connection>scm:git:git@github.com/ManfredTremmel/gwt-webworker.git</connection>
-		<developerConnection>scm:git:git@github.com/ManfredTremmel/gwt-webworker.git</developerConnection>
+		<connection>scm:git:git@github.com:ManfredTremmel/gwt-webworker.git</connection>
+		<developerConnection>scm:git:git@github.com:ManfredTremmel/gwt-webworker.git</developerConnection>
 	</scm>
-
-	<repositories>
-		<repository>
-			<id>sonatype-nexus-snapshots</id>
-			<name>Sonatype Nexus Snapshots</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
-
-	<distributionManagement>
-		<snapshotRepository>
-			<id>sonatype-nexus-snapshots</id>
-			<name>Sonatype Nexus Snapshots</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-		</snapshotRepository>
-		<repository>
-			<id>sonatype-nexus-staging</id>
-			<name>Nexus Release Repository</name>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-		</repository>
-	</distributionManagement>
-
-	<prerequisites>
-		<maven>3.0.0</maven>
-	</prerequisites>
 
 	<developers>
 		<developer>
@@ -80,34 +66,127 @@
 	</developers>
 
 	<properties>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<gwt.version>2.8.2</gwt.version>
-		<junit.version>4.12</junit.version>
-		<maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
-		<maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-		<maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
-		<maven-project-info-reports-plugin.version>2.9</maven-project-info-reports-plugin.version>
-		<nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
-		<wagon-webdav-jackrabbit.version>3.0.0</wagon-webdav-jackrabbit.version>
-		<maven-release-plugin.version>2.5.3</maven-release-plugin.version>
-		<maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
-
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+		<!--
+		  GWT 2.13.1 (2026-06-17) - the current release line.
+		  Note the groupId: as of GWT 2.10.0 the published coordinates moved from
+		  `com.google.gwt` to `org.gwtproject`; `com.google.gwt` is frozen at 2.10.0.
+		  The Java package names inside the jars are unchanged (`com.google.gwt.*`),
+		  so only the dependency declarations change, not the imports.
+		-->
+		<gwt.version>2.13.1</gwt.version>
+
+		<!--
+		  Java 11 is the floor: GWT 2.13 dev tools (compiler / CodeServer) require
+		  Java 11+ at runtime, and 2.13 is announced as the last series that still
+		  supports Java 11. Targeting 11 keeps the published jar consumable from
+		  Java 11, 17 and 21 hosts.
+		  `maven.compiler.release` (not source/target) is used so javac also checks
+		  against the Java 11 API - a bare <target> would let newer JDK APIs through.
+		-->
+		<maven.compiler.release>11</maven.compiler.release>
+
+		<!-- GWT module compiled by this build (see the gwt-maven-plugin execution). -->
+		<gwt.module>org.eostep.gwt.webworker.WebWorker</gwt.module>
+
+		<!-- GWT compile settings, shared by the library self-check and the verify profile. -->
+		<gwt.sourceLevel>11</gwt.sourceLevel>
+		<gwt.style>PRETTY</gwt.style>
+		<gwt.logLevel>INFO</gwt.logLevel>
+
+		<!-- Modules of the reachability harness under verify/ (see the gwt-verify profile). -->
+		<gwt.verify.hostModule>org.eostep.gwt.webworker.verify.host.HostSmoke</gwt.verify.hostModule>
+		<gwt.verify.workerModule>org.eostep.gwt.webworker.verify.worker.WorkerSmoke</gwt.verify.workerModule>
+
+		<!-- Modules of the manual browser demo under demo/ (see the gwt-demo profile). -->
+		<gwt.demo.hostModule>org.eostep.gwt.webworker.demo.host.DemoHost</gwt.demo.hostModule>
+		<gwt.demo.workerModule>org.eostep.gwt.webworker.demo.worker.DemoWorker</gwt.demo.workerModule>
+
+		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
+		<maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+		<maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+		<maven-install-plugin.version>3.1.4</maven-install-plugin.version>
+		<maven-source-plugin.version>3.3.0</maven-source-plugin.version>
+		<maven-javadoc-plugin.version>3.6.2</maven-javadoc-plugin.version>
+		<maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
+		<maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
+		<maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
+		<exec-maven-plugin.version>3.4.1</exec-maven-plugin.version>
+		<!--
+		  The successor of org.codehaus.mojo:gwt-maven-plugin, which stopped at 2.8.2
+		  (2017) and cannot drive GWT 2.10+. net.ltgt.gwt.maven is the maintained
+		  community plugin and is what the GWT project itself points users at.
+		-->
+		<gwt-maven-plugin.version>1.3.0</gwt-maven-plugin.version>
+		<junit.version>4.13.2</junit.version>
+
+		<!--
+		  Elemental2 - the thin JsInterop binding of the standard JS built-ins and DOM APIs.
+
+		  Needed for exactly one thing: `elemental2.core.JsArray<T>` has NO bound on T, while
+		  GWT's own `com.google.gwt.core.client.JsArray<T extends JavaScriptObject>` requires a
+		  JavaScriptObject type argument. That bound is what kept MessagePort on the legacy JSNI
+		  interop model: a native JsType cannot extend JavaScriptObject, so a JsArray<MessagePort>
+		  signature was impossible to satisfy. `elemental2.core.Transferable` is the WHATWG
+		  transferable marker interface, which is what the DOM spec actually declares.
+
+		  1.2.3 is the newest line published for GWT 2.9+; it pulls elemental2-promise,
+		  jsinterop-base and jsinterop-annotations transitively. Note the jsinterop-annotations
+		  version it asks for (2.0.2) and the one the GWT BOM manages (2.0.0) ship an identical
+		  set of 13 annotation classes, so the BOM's 2.0.0 is used and no override is needed.
+		-->
+		<elemental2.version>1.2.3</elemental2.version>
 	</properties>
 
+	<dependencyManagement>
+		<dependencies>
+			<!--
+			  One authoritative source for every org.gwtproject:* version and for
+			  com.google.jsinterop:jsinterop-annotations. Importing the BOM instead of
+			  pinning each artifact individually is what keeps gwt-user / gwt-dev /
+			  jsinterop-annotations from drifting apart.
+			-->
+			<dependency>
+				<groupId>org.gwtproject</groupId>
+				<artifactId>gwt</artifactId>
+				<version>${gwt.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
+		<!--
+		  `provided`: the GWT runtime is supplied by the host application, and GWT
+		  sources must be visible to the compiler of the consuming module, not bundled.
+		-->
 		<dependency>
-			<groupId>com.google.gwt</groupId>
+			<groupId>org.gwtproject</groupId>
 			<artifactId>gwt-user</artifactId>
-			<version>${gwt.version}</version>
 			<scope>provided</scope>
 		</dependency>
+		<!--
+		  gwt-dev carries the GWT compiler and the `com.google.gwt.core.ext.*` Linker API
+		  this module's linker implements. It is only needed to compile/link, never at
+		  runtime, hence `provided`.
+		-->
 		<dependency>
-			<groupId>com.google.gwt</groupId>
+			<groupId>org.gwtproject</groupId>
 			<artifactId>gwt-dev</artifactId>
-			<version>${gwt.version}</version>
 			<scope>provided</scope>
+		</dependency>
+		<!--
+		  `compile`, not `provided`: elemental2.core.JsArray and elemental2.core.Transferable
+		  appear in this library's public signatures, so a consumer's GWT module needs both the
+		  classes and the elemental2.core.Core module descriptor. WebWorker.gwt.xml inherits it.
+		-->
+		<dependency>
+			<groupId>com.google.elemental2</groupId>
+			<artifactId>elemental2-core</artifactId>
+			<version>${elemental2.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -124,38 +203,50 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
-					<source>${maven.compiler.source}</source>
-					<target>${maven.compiler.target}</target>
+					<release>${maven.compiler.release}</release>
 				</configuration>
 			</plugin>
-			<!-- GWT Maven Plugin -->
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>${maven-resources-plugin.version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${maven-jar-plugin.version}</version>
+			</plugin>
+			<!--
+			  GWT compile of this module's own descriptor.
+
+			  What it proves: the .gwt.xml is still valid for GWT 2.13, the declared
+			  linker class still loads, and the module still compiles and links.
+			  What it does NOT prove: that the WebWorker client API compiles - GWT
+			  prunes everything the entry point cannot reach, and this module's entry
+			  point is intentionally a no-op. API-level coverage comes from the
+			  `gwt-verify` profile (see below).
+			-->
+			<plugin>
+				<groupId>net.ltgt.gwt.maven</groupId>
 				<artifactId>gwt-maven-plugin</artifactId>
-				<version>${gwt.version}</version>
+				<version>${gwt-maven-plugin.version}</version>
 				<executions>
 					<execution>
+						<id>gwt-compile</id>
 						<goals>
 							<goal>compile</goal>
-							<goal>test</goal>
-							<goal>resources</goal>
 						</goals>
+						<configuration>
+							<moduleName>${gwt.module}</moduleName>
+							<webappDirectory>${project.build.directory}/gwt/war</webappDirectory>
+							<workDir>${project.build.directory}/gwt/work</workDir>
+							<sourceLevel>${gwt.sourceLevel}</sourceLevel>
+							<style>${gwt.style}</style>
+							<logLevel>${gwt.logLevel}</logLevel>
+							<failOnError>true</failOnError>
+						</configuration>
 					</execution>
 				</executions>
-				<!-- Plugin configuration. There are many available options, see gwt-maven-plugin 
-					documentation at codehaus.org -->
-				<configuration>
-					<modules>
-						<module>com.google.gwt.webworker.WebWorker</module>
-					</modules>
-					<logLevel>INFO</logLevel>
-					<inplace>false</inplace>
-					<style>OBFUSCATED</style>
-					<failOnError>true</failOnError>
-					<localWorkers>-1</localWorkers>
-					<testTimeOut>300</testTimeOut>
-					<extraJvmArgs>-Xms512m -Xmx1g</extraJvmArgs>
-				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -183,54 +274,470 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-gpg-plugin</artifactId>
-				<version>${maven-gpg-plugin.version}</version>
-				<executions>
-					<execution>
-						<id>sign-artifacts</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>sign</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>${nexus-staging-maven-plugin.version}</version>
-				<extensions>true</extensions>
-				<configuration>
-					<!-- The Base URL of Nexus instance where we want to stage -->
-					<serverId>sonatype-nexus-staging</serverId>
-					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-					<autoReleaseAfterClose>true</autoReleaseAfterClose>
-				</configuration>
-			</plugin>
 		</plugins>
-		<extensions>
-			<extension>
-				<groupId>org.apache.maven.wagon</groupId>
-				<artifactId>wagon-webdav-jackrabbit</artifactId>
-				<version>${wagon-webdav-jackrabbit.version}</version>
-			</extension>
-		</extensions>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-release-plugin</artifactId>
-					<version>${maven-release-plugin.version}</version>
-					<configuration>
-						<mavenExecutorId>forked-path</mavenExecutorId>
-						<useReleaseProfile>false</useReleaseProfile>
-						<arguments>-Psonatype-oss-release</arguments>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
 	</build>
+
+	<profiles>
+		<!--
+		  Artifact signing is opt-in.
+
+		  It used to be bound to `verify` unconditionally, which means a plain
+		  `mvn install` on a machine without a GPG key (or with one that has a
+		  passphrase) blocks on a gpg prompt - `verify` is part of the `install`
+		  lifecycle. Only a release actually needs signatures, so the plugin moved
+		  into this profile: `mvn -Prelease deploy`.
+		-->
+		<profile>
+			<id>release</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>${maven-gpg-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<!--
+		  Reachability + runtime verification harness.
+
+		  `verify/` holds two throwaway GWT modules compiled from this library's own
+		  sources:
+
+		    worker/  WorkerSmoke - runs *inside* a real dedicated worker using
+		             `<add-linker name="dedicatedworker"/>`, exactly as the README tells
+		             consumers to. Its `touchEverything()` names every public member of
+		             the library, because GWT prunes everything the entry point cannot
+		             reach - without that anchor a green build would prove nothing.
+		             The values it touches come from opaque `$wnd[key]` reads so the
+		             optimizer cannot prove them null and delete the anchor.
+
+		    host/    HostSmoke - main-thread side. Creates a Worker, wires onmessage /
+		             onerror, transfers a real MessageChannel port into the worker and
+		             writes a PASS/FAIL verdict into the page.
+
+		  This profile only *compiles* the harness. Driving it in a browser needs
+		  Chrome, so it lives in verify/run-browser-verify.sh (see the README).
+
+		  Opt-in, so `mvn install` stays fast and free of harness artefacts.
+		-->
+		<profile>
+			<id>gwt-verify</id>
+			<build>
+				<plugins>
+					<!--
+					  Resolves the dependency classpath into a property so the exec below can
+					  splice it together with the extra source roots.
+
+					  exec:exec cannot do this itself: `additionalClasspathElements` exists
+					  only on exec:java, and exec:java would run the GWT compiler inside the
+					  Maven JVM, where a compile error calls System.exit and takes Maven down
+					  with it.
+					-->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-dependency-plugin</artifactId>
+						<version>${maven-dependency-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>gwt-verify-classpath</id>
+								<phase>process-test-classes</phase>
+								<goals>
+									<goal>build-classpath</goal>
+								</goals>
+								<configuration>
+									<!-- `compile` covers compile + provided, which is where gwt-user / gwt-dev live. -->
+									<includeScope>compile</includeScope>
+									<outputProperty>gwt.verify.deps</outputProperty>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<!--
+					  The host page has to sit at the war root: HostSmoke resolves the worker
+					  as "workersmoke/workersmoke.nocache.js" and POSTs its verdict to the
+					  relative "report", both of which are relative to the page URL. Copying
+					  it here means `mvn -Pgwt-verify verify` leaves a war that verify/run-e2e.py
+					  can serve as-is.
+					-->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-resources-plugin</artifactId>
+						<version>${maven-resources-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>gwt-verify-webapp</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${project.build.directory}/gwt/www</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${project.basedir}/verify/web</directory>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>${exec-maven-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>gwt-verify-compile</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>java</executable>
+									<arguments>
+										<argument>-Xmx2g</argument>
+										<argument>-classpath</argument>
+										<!--
+										  GWT compiles from *sources*, so the library's src/main/java has to
+										  be on the classpath - target/classes alone yields "No source code
+										  is available for type ...". The harness source roots come along for
+										  the same reason. target/classes stays because that is where
+										  WebWorker.gwt.xml and the linker template land.
+										  ${path.separator} keeps this portable between Windows and Unix.
+										-->
+										<argument>${project.basedir}/verify/host/java${path.separator}${project.basedir}/verify/worker/java${path.separator}${project.basedir}/src/main/java${path.separator}${project.build.outputDirectory}${path.separator}${gwt.verify.deps}</argument>
+										<argument>com.google.gwt.dev.Compiler</argument>
+										<argument>-war</argument>
+										<argument>${project.build.directory}/gwt/www</argument>
+										<argument>-workDir</argument>
+										<argument>${project.build.directory}/gwt/verify-work</argument>
+										<argument>-style</argument>
+										<argument>${gwt.style}</argument>
+										<argument>-sourceLevel</argument>
+										<argument>${gwt.sourceLevel}</argument>
+										<argument>-logLevel</argument>
+										<argument>${gwt.logLevel}</argument>
+										<argument>-failOnError</argument>
+										<argument>${gwt.verify.hostModule}</argument>
+										<argument>${gwt.verify.workerModule}</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<!--
+		  Manual browser demo.
+
+		  Compiles the two modules under demo/ into target/gwt/demo, a directory you can serve
+		  as-is and click around in:
+
+		    mvn -o -DskipTests -Pgwt-demo package
+		    python demo/serve.py            # http://127.0.0.1:8080
+
+		  Why a separate profile and not a plain directory in the jar: GWT modules are compiled,
+		  not shipped, so a demo has to be built before it can be opened - and a consumer of this
+		  library should not pay for that on every build.
+
+		  Difference from the gwt-verify profile: gwt-verify asserts and reports a machine-checked
+		  verdict; this one produces a page for a human. They deliberately share nothing so that
+		  neither can be broken while editing the other.
+
+		  Bound to `package` (not `verify`) so that both `mvn -Pgwt-demo package` and
+		  `mvn -Pgwt-demo verify` produce the demo.
+		-->
+		<profile>
+			<id>gwt-demo</id>
+			<build>
+				<plugins>
+					<!-- Same reason as in gwt-verify: exec:exec cannot resolve a classpath itself. -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-dependency-plugin</artifactId>
+						<version>${maven-dependency-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>gwt-demo-classpath</id>
+								<phase>process-test-classes</phase>
+								<goals>
+									<goal>build-classpath</goal>
+								</goals>
+								<configuration>
+									<includeScope>compile</includeScope>
+									<outputProperty>gwt.demo.deps</outputProperty>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- index.html has to sit at the war root: the module resolves as
+					     "demohost/demohost.nocache.js", relative to the page URL. -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-resources-plugin</artifactId>
+						<version>${maven-resources-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>gwt-demo-webapp</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${project.build.directory}/gwt/demo</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${project.basedir}/demo/web</directory>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>${exec-maven-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>gwt-demo-compile</id>
+								<phase>package</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>java</executable>
+									<arguments>
+										<argument>-Xmx2g</argument>
+										<argument>-classpath</argument>
+										<!-- GWT compiles from sources, so demo/*/java and the library's
+										     own src/main/java must both be on the classpath; the library's
+										     .gwt.xml and linker template come from target/classes. -->
+										<argument>${project.basedir}/demo/host/java${path.separator}${project.basedir}/demo/worker/java${path.separator}${project.basedir}/src/main/java${path.separator}${project.build.outputDirectory}${path.separator}${gwt.demo.deps}</argument>
+										<argument>com.google.gwt.dev.Compiler</argument>
+										<argument>-war</argument>
+										<argument>${project.build.directory}/gwt/demo</argument>
+										<argument>-workDir</argument>
+										<argument>${project.build.directory}/gwt/demo-work</argument>
+										<argument>-style</argument>
+										<argument>${gwt.style}</argument>
+										<argument>-sourceLevel</argument>
+										<argument>${gwt.sourceLevel}</argument>
+										<argument>-logLevel</argument>
+										<argument>${gwt.logLevel}</argument>
+										<argument>-failOnError</argument>
+										<argument>${gwt.demo.hostModule}</argument>
+										<argument>${gwt.demo.workerModule}</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<!--
+		  Run the demo under GWT's own DevMode (Super Dev Mode), instead of serving a linked build.
+
+		    mvn -o -DskipTests -Pgwt-demo-devmode install
+
+		  Why `install` and not `package`: DevMode is a foreground server that never returns, so
+		  binding it to `package` would turn an ordinary build into a hang. `install` is simply the
+		  first phase after everything the launcher needs, and Ctrl+C stops the server.
+
+		  Phases, in order:
+		    process-test-classes  resolve the dependency classpath the GWT compiler needs
+		    package               compile ONLY the worker module, straight into the DevMode war dir
+		    verify                create the code server's workDir, copy the page into the war dir
+		    install               start DevMode (blocks)
+
+		  The host module is compiled by the code server on demand and recompiled on every browser
+		  reload. The worker cannot be, and DevMode says so outright:
+
+		    [ERROR] linkers other than CrossSiteIFrameLinker aren't supported.
+		            Found: org.eostep.gwt.webworker.linker.DedicatedWorkerLinker
+
+		  Super Dev Mode needs its own linker to inject the recompile client, and a dedicated worker
+		  needs DedicatedWorkerLinker - the two are mutually exclusive. So the worker stays a
+		  pre-built static file in the war dir and only the host is live. Editing demo/worker/...
+		  therefore needs another run of this command; editing demo/host/... needs only a reload.
+
+		  The war dir is deliberately NOT target/gwt/demo. If the linked host build were sitting
+		  there too, Jetty could serve it instead of the code server's output, and Super Dev Mode
+		  would be silently off - a failure that looks exactly like success. Keeping the war dir to
+		  "index.html + demoworker/" means an SDM failure shows up as a blank page instead.
+		-->
+		<profile>
+			<id>gwt-demo-devmode</id>
+			<properties>
+				<gwt.devmode.port>8888</gwt.devmode.port>
+				<gwt.devmode.codeServerPort>9876</gwt.devmode.codeServerPort>
+			</properties>
+			<build>
+				<plugins>
+					<!-- Same reason as in gwt-verify: exec:exec cannot resolve a classpath itself. -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-dependency-plugin</artifactId>
+						<version>${maven-dependency-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>gwt-demo-devmode-classpath</id>
+								<phase>process-test-classes</phase>
+								<goals>
+									<goal>build-classpath</goal>
+								</goals>
+								<configuration>
+									<includeScope>compile</includeScope>
+									<outputProperty>gwt.demo.deps</outputProperty>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<!--
+					  The worker has to be linked before DevMode starts, and it has to land in the war
+					  dir DevMode will serve. Only the worker module is named here - passing the host
+					  module too would make DevMode reject the whole run because of the worker's linker.
+					-->
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>${exec-maven-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>gwt-demo-devmode-worker</id>
+								<phase>package</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>java</executable>
+									<arguments>
+										<argument>-Xmx2g</argument>
+										<argument>-classpath</argument>
+										<argument>${project.basedir}/demo/host/java${path.separator}${project.basedir}/demo/worker/java${path.separator}${project.basedir}/src/main/java${path.separator}${project.build.outputDirectory}${path.separator}${gwt.demo.deps}</argument>
+										<argument>com.google.gwt.dev.Compiler</argument>
+										<argument>-war</argument>
+										<argument>${project.build.directory}/gwt/demo-devmode</argument>
+										<argument>-workDir</argument>
+										<argument>${project.build.directory}/gwt/demo-devmode-work</argument>
+										<argument>-style</argument>
+										<argument>${gwt.style}</argument>
+										<argument>-sourceLevel</argument>
+										<argument>${gwt.sourceLevel}</argument>
+										<argument>-logLevel</argument>
+										<argument>${gwt.logLevel}</argument>
+										<argument>-failOnError</argument>
+										<argument>${gwt.demo.workerModule}</argument>
+									</arguments>
+								</configuration>
+							</execution>
+							<execution>
+								<id>gwt-demo-devmode-run</id>
+								<phase>install</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>java</executable>
+									<arguments>
+										<argument>-Xmx2g</argument>
+										<argument>-classpath</argument>
+										<argument>${project.basedir}/demo/host/java${path.separator}${project.basedir}/demo/worker/java${path.separator}${project.basedir}/src/main/java${path.separator}${project.build.outputDirectory}${path.separator}${gwt.demo.deps}</argument>
+										<argument>com.google.gwt.dev.DevMode</argument>
+										<argument>-war</argument>
+										<argument>${project.build.directory}/gwt/demo-devmode</argument>
+										<argument>-workDir</argument>
+										<argument>${project.build.directory}/gwt/demo-devmode-work</argument>
+										<argument>-port</argument>
+										<argument>${gwt.devmode.port}</argument>
+										<argument>-codeServerPort</argument>
+										<argument>${gwt.devmode.codeServerPort}</argument>
+										<argument>-style</argument>
+										<argument>${gwt.style}</argument>
+										<argument>-sourceLevel</argument>
+										<argument>${gwt.sourceLevel}</argument>
+										<argument>-logLevel</argument>
+										<argument>${gwt.logLevel}</argument>
+										<!-- Opens the browser on the page below. Drop it to start the
+										     server without a browser. -->
+										<argument>-startupUrl</argument>
+										<argument>index.html</argument>
+										<argument>${gwt.demo.hostModule}</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<!--
+					  index.html has to sit at the war root: the module resolves as
+					  "demohost/demohost.nocache.js", relative to the page URL.
+					-->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-resources-plugin</artifactId>
+						<version>${maven-resources-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>gwt-demo-devmode-webapp</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${project.build.directory}/gwt/demo-devmode</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${project.basedir}/demo/web</directory>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<!--
+					  CodeServer.ensureWorkDir only *checks* that the workspace directory exists - it
+					  does not create it - and DevMode dies with "workspace directory doesn't exist"
+					  before it ever binds a port. The GWT compiler creates its own -workDir, which is
+					  why the worker compile above needs no equivalent step.
+					-->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<version>${maven-antrun-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>gwt-demo-devmode-workdir</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<target>
+										<mkdir dir="${project.build.directory}/gwt/demo-devmode-work" />
+									</target>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>

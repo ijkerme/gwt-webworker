@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>gwt-webworker · Worker 手动测试 Demo</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --border: #d8dce2;
+      --text: #1f2328;
+      --muted: #656d76;
+      --ok: #1a7f37;
+      --idle: #9a6700;
+      --err: #c5221f;
+      --code-bg: #f0f2f5;
+      --accent: #0969da;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14171a;
+        --panel: #1c2024;
+        --border: #30363d;
+        --text: #e6edf3;
+        --muted: #9198a1;
+        --ok: #3fb950;
+        --idle: #d29922;
+        --err: #f85149;
+        --code-bg: #23282d;
+        --accent: #4493f8;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 -apple-system, "Segoe UI", "Microsoft YaHei", Roboto, sans-serif;
+    }
+
+    .wrap { max-width: 1080px; margin: 0 auto; }
+
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    .sub { color: var(--muted); margin: 0 0 18px; }
+    .sub code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+
+    #demo {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    /* ---- GWT widget styles (the widgets carry these class names) ---- */
+
+    .demo-root { width: 100%; }
+
+    .demo-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .demo-status-idle { background: color-mix(in srgb, var(--idle) 16%, transparent); color: var(--idle); }
+    .demo-status-ok   { background: color-mix(in srgb, var(--ok) 16%, transparent);   color: var(--ok); }
+
+    .demo-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .demo-button {
+      font: inherit;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .demo-button:hover { border-color: var(--accent); color: var(--accent); }
+    .demo-button:active { transform: translateY(1px); }
+
+    .demo-input {
+      font: inherit;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+    }
+
+    .demo-log {
+      width: 100%;
+      font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--text);
+      resize: vertical;
+      white-space: pre;
+      overflow: auto;
+    }
+
+    #err-host {
+      white-space: pre-wrap;
+      color: var(--err);
+      font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>gwt-webworker · Worker 手动测试 Demo</h1>
+  <p class="sub">
+    用 GWT DevMode 打开本页：<code>mvn -o -DskipTests -Pgwt-demo-devmode install</code>，
+    然后点「启动 Worker」。
+    Web Worker 需要真实 origin，用 <code>file://</code> 直接打开会被浏览器拒绝。
+  </p>
+
+  <div id="demo"></div>
+
+  <!--
+    Host-page error probe. Compiled GWT swallows uncaught exceptions (its default window.onerror
+    logs and returns true), so a failure inside the demo UI would otherwise leave a half-built page
+    with no explanation. Anything showing up here is a bug in the demo, not in the worker.
+  -->
+  <div id="err-host"></div>
+</div>
+
+<noscript>这个页面需要 JavaScript。</noscript>
+
+<script>
+  (function () {
+    var host = document.getElementById('err-host');
+    function show(prefix, detail) {
+      host.textContent += prefix + ': ' + detail + '\n';
+    }
+    window.addEventListener('error', function (e) {
+      show('UNCAUGHT', e.message + '  (' + e.filename + ':' + e.lineno + ')');
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      show('REJECTION', String(e.reason));
+    });
+  })();
+</script>
+
+<script src="demohost/demohost.nocache.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+  agreements. See the NOTICE file distributed with this work for additional information regarding
+  copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance with the License. You may obtain a
+  copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software distributed under the License
+  is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+  or implied. See the License for the specific language governing permissions and limitations under
+  the License.
+-->
+<module rename-to="demohost">
+  <!--
+    This is the main-thread module - the page UI. Unlike the worker module it does NOT add the
+    `dedicatedworker` linker: it runs in an ordinary window and uses the default `xsiframe`
+    linker.
+
+    `user.agent` is deliberately left at its default here, so the compiler emits all permutations
+    and the page works in whatever browser you open it with. (The worker module has to pin it,
+    because a worker cannot detect the browser - see DemoWorker.gwt.xml.)
+  -->
+  <inherits name="com.google.gwt.user.User" />
+  <inherits name="org.eostep.gwt.webworker.WebWorker" />
+
+  <!-- The default source path is `client`, but this class sits in `...demo.host`. -->
+  <source path="" />
+
+  <!--
+    Declared explicitly on purpose. GWT does NOT infer the entry point from the module's short name
+    - with no <entry-point> and no class literally called `EntryPoint` in the module's package, the
+    module compiles and links cleanly and produces a ~24 KB bootstrap that does nothing at all.
+    A green build here is not evidence that anything ran.
+  -->
+  <entry-point class="org.eostep.gwt.webworker.demo.host.DemoHost" />
+</module>

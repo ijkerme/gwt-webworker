@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>gwt-webworker verification harness</title>
+<style>
+  body { font: 13px/1.5 monospace; margin: 16px; }
+  #result { font-size: 20px; font-weight: bold; padding: 8px 0; }
+  #out { white-space: pre-wrap; border-top: 1px solid #ccc; padding-top: 8px; }
+</style>
+</head>
+<body>
+  <h1>gwt-webworker verification harness</h1>
+  <p>
+    Host module <code>hostsmoke</code> creates a real <code>Worker</code> from the
+    <code>workersmoke</code> module (compiled with the library's <code>dedicatedworker</code>
+    linker) and exchanges messages with it.
+  </p>
+  <div id="result">RUNNING</div>
+  <div id="out"></div>
+
+  <div id="err-host" style="white-space:pre; color:#c5221f"></div>
+  <script>
+    // GWT swallows uncaught exceptions in production mode; surface them instead.
+    window.addEventListener('error', function (e) {
+      document.getElementById('err-host').textContent +=
+          'UNCAUGHT: ' + e.message + '\n  ' +
+          (e.error && e.error.stack ? e.error.stack : e.filename + ':' + e.lineno) + '\n';
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      document.getElementById('err-host').textContent += 'REJECTION: ' + String(e.reason) + '\n';
+    });
+  </script>
+  <script src="hostsmoke/hostsmoke.nocache.js"></script>
+</body>
+</html>

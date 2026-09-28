@@ -1,0 +1,10 @@
+<module rename-to="hostsmoke">
+  <inherits name="com.google.gwt.user.User" />
+  <!-- com.google.gwt.user.User does not pull in com.google.gwt.dom.client.*; this harness writes
+       its results into the page, so it needs Document/Element. -->
+  <inherits name="com.google.gwt.dom.DOM" />
+  <inherits name="org.eostep.gwt.webworker.WebWorker" />
+
+  <source path="" />
+  <entry-point class="org.eostep.gwt.webworker.verify.host.HostSmoke" />
+</module>

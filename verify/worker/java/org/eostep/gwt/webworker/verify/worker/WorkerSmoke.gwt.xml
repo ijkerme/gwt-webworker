@@ -1,0 +1,17 @@
+<module rename-to="workersmoke">
+  <!--
+    Exactly the integration the library README documents for GWT hosts, with no extra
+    inherits - so a green compile of this module proves the documented recipe still works
+    on the GWT version this project targets.
+  -->
+  <inherits name="org.eostep.gwt.webworker.WebWorker" />
+
+  <set-property name="user.agent" value="safari" />
+  <set-configuration-property name="user.agent.runtimeWarning" value="false" />
+
+  <!-- Use the WebWorker linker for a Dedicated worker -->
+  <add-linker name="dedicatedworker" />
+
+  <source path="" />
+  <entry-point class="org.eostep.gwt.webworker.verify.worker.WorkerSmoke" />
+</module>
